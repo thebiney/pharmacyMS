@@ -1,322 +1,76 @@
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.*;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.ResultSet;
+import java.sql.PreparedStatement;
+import java.util.Scanner;
 
-class Drug {
-    private String code;
-    private String name;
-    private String description;
-    private double price;
-    private List<Supplier> suppliers;
-    private List<Purchase> purchaseHistory;
-
-    public Drug(String code, String name, String description, double price) {
-        this.code = code;
-        this.name = name;
-        this.description = description;
-        this.price = price;
-        this.suppliers = new ArrayList<>();
-        this.purchaseHistory = new ArrayList<>();
-    }
-
-    public String getCode() { return code; }
-    public String getName() { return name; }
-    public String getDescription() { return description; }
-    public double getPrice() { return price; }
-    public List<Supplier> getSuppliers() { return suppliers; }
-    public List<Purchase> getPurchaseHistory() { return purchaseHistory; }
-
-    public void addSupplier(Supplier supplier) { suppliers.add(supplier); }
-    public void addPurchase(Purchase purchase) { purchaseHistory.add(purchase); }
-    public void sortSuppliersByName() { suppliers.sort(Comparator.comparing(Supplier::getName)); }
-    public void sortSuppliersByLocation() { suppliers.sort(Comparator.comparing(Supplier::getLocation)); }
-}
-
-class Supplier {
-    private String id;
-    private String name;
-    private String location;
-
-    public Supplier(String id, String name, String location) {
-        this.id = id;
-        this.name = name;
-        this.location = location;
-    }
-
-    public String getId() { return id; }
-    public String getName() { return name; }
-    public String getLocation() { return location; }
-}
-
-class Customer {
-    private String id;
-    private String name;
-
-    public Customer(String id, String name) {
-        this.id = id;
-        this.name = name;
-    }
-
-    public String getId() { return id; }
-    public String getName() { return name; }
-}
-
-class Purchase {
-    private String customerId;
-    private Date date;
-    private int quantity;
-
-    public Purchase(String customerId, Date date, int quantity) {
-        this.customerId = customerId;
-        this.date = date;
-        this.quantity = quantity;
-    }
-
-    public String getCustomerId() { return customerId; }
-    public Date getDate() { return date; }
-    public int getQuantity() { return quantity; }
-}
-
-//Testing commenting, ignore this comment
 public class PharmacyManagementSystem {
-    private HashMap<String, Drug> drugs;
-    private HashMap<String, Supplier> suppliers;
-    private HashMap<String, Customer> customers;
-
-    public PharmacyManagementSystem() {
-        this.drugs = new HashMap<>();
-        this.suppliers = new HashMap<>();
-        this.customers = new HashMap<>();
-    }
-
-    // Database connection
-    private Connection getConnection() throws SQLException {
-        String url = "jdbc:mysql://localhost:3306/pharmacy_database";
-        String user = "your_username";
-        String password = "your_password";
-        return DriverManager.getConnection(url, user, password);
-    }
-
-    // Add a drug to the system and database
-    public void addDrug(Drug drug) {
-        drugs.put(drug.getCode(), drug);
-        try (Connection conn = getConnection()) {
-            String sql = "INSERT INTO drugs (code, name, description, price) VALUES (?, ?, ?, ?)";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, drug.getCode());
-                stmt.setString(2, drug.getName());
-                stmt.setString(3, drug.getDescription());
-                stmt.setDouble(4, drug.getPrice());
-                stmt.executeUpdate();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Remove a drug from the system and database
-    public void removeDrug(String drugCode) {
-        drugs.remove(drugCode);
-        try (Connection conn = getConnection()) {
-            String sql = "DELETE FROM drugs WHERE code = ?";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, drugCode);
-                stmt.executeUpdate();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Get a drug by code from the system or database
-    public Drug getDrug(String drugCode) {
-        if (drugs.containsKey(drugCode)) {
-            return drugs.get(drugCode);
-        }
-        try (Connection conn = getConnection()) {
-            String sql = "SELECT * FROM drugs WHERE code = ?";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, drugCode);
-                try (ResultSet rs = stmt.executeQuery()) {
-                    if (rs.next()) {
-                        Drug drug = new Drug(
-                                rs.getString("code"),
-                                rs.getString("name"),
-                                rs.getString("description"),
-                                rs.getDouble("price")
-                        );
-                        drugs.put(drugCode, drug);
-                        return drug;
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    // Add a supplier to the system and database
-    public void addSupplier(Supplier supplier) {
-        suppliers.put(supplier.getId(), supplier);
-        try (Connection conn = getConnection()) {
-            String sql = "INSERT INTO suppliers (id, name, location) VALUES (?, ?, ?)";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, supplier.getId());
-                stmt.setString(2, supplier.getName());
-                stmt.setString(3, supplier.getLocation());
-                stmt.executeUpdate();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Get a supplier by ID from the system or database
-    public Supplier getSupplier(String supplierId) {
-        if (suppliers.containsKey(supplierId)) {
-            return suppliers.get(supplierId);
-        }
-        try (Connection conn = getConnection()) {
-            String sql = "SELECT * FROM suppliers WHERE id = ?";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, supplierId);
-                try (ResultSet rs = stmt.executeQuery()) {
-                    if (rs.next()) {
-                        Supplier supplier = new Supplier(
-                                rs.getString("id"),
-                                rs.getString("name"),
-                                rs.getString("location")
-                        );
-                        suppliers.put(supplierId, supplier);
-                        return supplier;
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    // Add a customer to the system and database
-    public void addCustomer(Customer customer) {
-        customers.put(customer.getId(), customer);
-        try (Connection conn = getConnection()) {
-            String sql = "INSERT INTO customers (id, name) VALUES (?, ?)";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, customer.getId());
-                stmt.setString(2, customer.getName());
-                stmt.executeUpdate();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Get a customer by ID from the system or database
-    public Customer getCustomer(String customerId) {
-        if (customers.containsKey(customerId)) {
-            return customers.get(customerId);
-        }
-        try (Connection conn = getConnection()) {
-            String sql = "SELECT * FROM customers WHERE id = ?";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, customerId);
-                try (ResultSet rs = stmt.executeQuery()) {
-                    if (rs.next()) {
-                        Customer customer = new Customer(
-                                rs.getString("id"),
-                                rs.getString("name")
-                        );
-                        customers.put(customerId, customer);
-                        return customer;
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    // Search for suppliers of a specific drug based on parameters
-    public List<Supplier> searchSuppliers(String drugCode, String parameter, String value) {
-        Drug drug = getDrug(drugCode);
-        if (drug == null) return new ArrayList<>();
-        List<Supplier> matchedSuppliers = new ArrayList<>();
-        for (Supplier supplier : drug.getSuppliers()) {
-            if (parameter.equals("location") && supplier.getLocation().equals(value)) {
-                matchedSuppliers.add(supplier);
-            }
-        }
-        return matchedSuppliers;
-    }
-
-    // Add purchase history to a drug
-    public void addPurchase(String drugCode, Purchase purchase) {
-        Drug drug = getDrug(drugCode);
-        if (drug != null) {
-            drug.addPurchase(purchase);
-        }
-    }
-
-    // Sort suppliers of a specific drug by name
-    public void sortSuppliersByName(String drugCode) {
-        Drug drug = getDrug(drugCode);
-        if (drug != null) {
-            drug.sortSuppliersByName();
-        }
-    }
-
-    // Sort suppliers of a specific drug by location
-    public void sortSuppliersByLocation(String drugCode) {
-        Drug drug = getDrug(drugCode);
-        if (drug != null) {
-            drug.sortSuppliersByLocation();
-        }
-    }
-
-    public void displayMenu() {
+    public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        while (true) {
-            System.out.println("\nWelcome to the Pharmacy Management System");
-            System.out.println("Please select an option:");
-            System.out.println("1. Add Drug to Inventory");
-            System.out.println("2. Search for a Drug in Inventory");
-            System.out.println("3. View a List of All Drugs and Supplier Details");
-            System.out.println("4. View Purchase History");
-            System.out.println("5. Exit\n\nPlease Enter Your Input:");
+        Connection connection = null;
 
-            int choice = scanner.nextInt();
-            scanner.nextLine();  // Consume newline
+        try {
+            // Load the MySQL JDBC driver
+            Class.forName("com.mysql.cj.jdbc.Driver");
 
-            switch (choice) {
-                case 1:
-                    addDrugToInventory(scanner);
-                    break;
-                case 2:
-                    searchDrugInInventory(scanner);
-                    break;
-                case 3:
-                    viewAllDrugsAndSuppliers();
-                    break;
-                case 4:
-                    viewPurchaseHistory(scanner);
-                    break;
-                case 5:
-                    System.out.println("Exiting... Thank you!");
-                    return;
-                default:
-                    System.out.println("Invalid choice. Please try again.");
+            // Connect to the database
+            String url = "jdbc:mysql://localhost:3306/pharmacy_database";
+            String username = "kbiney";
+            String password = "1234";
+
+            connection = DriverManager.getConnection(url, username, password);
+
+            while (true) {
+                System.out.println("\n1. Add drug");
+                System.out.println("2. Search for a drug");
+                System.out.println("3. View all drugs and their suppliers");
+                System.out.println("4. View purchase history for a drug");
+                System.out.println("5. Exit");
+                System.out.print("\nChoose an option: ");
+                int choice = scanner.nextInt();
+                scanner.nextLine(); // consume newline
+
+                switch (choice) {
+                    case 1:
+                        addDrug(connection, scanner);
+                        break;
+                    case 2:
+                        searchDrug(connection, scanner);
+                        break;
+                    case 3:
+                        viewAllDrugsAndSuppliers(connection);
+                        break;
+                    case 4:
+                        viewPurchaseHistory(connection, scanner);
+                        break;
+                    case 5:
+                        System.out.println("Thank you for using the Pharmacy Management System");
+                        return;
+                    default:
+                        System.out.println("Invalid choice. Try again.");
+                }
+            }
+        } catch (ClassNotFoundException e) {
+            System.err.println("Error loading MySQL JDBC driver: " + e.getMessage());
+        } catch (SQLException e) {
+            System.err.println("Error connecting to the database: " + e.getMessage());
+        } finally {
+            // Close resources
+            try {
+                if (connection != null) connection.close();
+            } catch (SQLException e) {
+                System.err.println("Error closing the database resources: " + e.getMessage());
+            }
+
+            if (scanner != null) {
+                scanner.close();
             }
         }
     }
 
-    private void addDrugToInventory(Scanner scanner) {
+    private static void addDrug(Connection connection, Scanner scanner) throws SQLException {
         System.out.println("\nEnter drug code:");
         String code = scanner.nextLine();
         System.out.println("\nEnter drug name:");
@@ -325,72 +79,102 @@ public class PharmacyManagementSystem {
         String description = scanner.nextLine();
         System.out.println("\nEnter drug price:");
         double price = scanner.nextDouble();
-        scanner.nextLine();  // Consume newline
+        scanner.nextLine();  // Consume the newline
+        System.out.println("\nEnter drug dosage:");
+        String dosage = scanner.nextLine();
+        System.out.println("\nEnter supplier ID:");
+        int supplierId = scanner.nextInt();
+        scanner.nextLine();  // Consume the newline
 
-        Drug newDrug = new Drug(code, name, description, price);
-        addDrug(newDrug);
-        System.out.println("\n\nDrug added successfully!");
-    }
-
-    private void searchDrugInInventory(Scanner scanner) {
-        System.out.println("\nEnter drug code to search:");
-        String code = scanner.nextLine();
-        Drug drug = getDrug(code);
-        if (drug != null) {
-            System.out.println("Drug found: " + drug.getName() + ", " + drug.getDescription() + ", $" + drug.getPrice());
-        } else {
-            System.out.println("Drug not found.");
+        String insertSQL = "INSERT INTO drugs (code, name, description, price, dosage, supplier_id) VALUES (?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(insertSQL)) {
+            preparedStatement.setString(1, code);
+            preparedStatement.setString(2, name);
+            preparedStatement.setString(3, description);
+            preparedStatement.setDouble(4, price);
+            preparedStatement.setString(5, dosage);
+            preparedStatement.setInt(6, supplierId);
+            preparedStatement.executeUpdate();
+            System.out.println("\nDrug added successfully!");
         }
     }
 
-    private void viewAllDrugsAndSuppliers() {
-        if (drugs.isEmpty()) {
-            System.out.println("No drugs in inventory.");
-            return;
-        }
+    private static void searchDrug(Connection connection, Scanner scanner) throws SQLException {
+        System.out.println("\nEnter drug code or name to search:");
+        String searchTerm = scanner.nextLine();
 
-        for (Drug drug : drugs.values()) {
-            System.out.println("Drug: " + drug.getName() + ", Code: " + drug.getCode() + ", Price: $" + drug.getPrice());
-            System.out.println("Suppliers:");
-            for (Supplier supplier : drug.getSuppliers()) {
-                System.out.println(" - " + supplier.getName() + ", Location: " + supplier.getLocation());
+        String searchSQL = "SELECT * FROM drugs WHERE code = ? OR name = ?";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(searchSQL)) {
+            preparedStatement.setString(1, searchTerm);
+            preparedStatement.setString(2, searchTerm);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            if (resultSet.next()) {
+                do {
+                    String code = resultSet.getString("code");
+                    String name = resultSet.getString("name");
+                    String description = resultSet.getString("description");
+                    double price = resultSet.getDouble("price");
+                    String dosage = resultSet.getString("dosage");
+
+                    System.out.println("Code: " + code + " | Name: " + name + " | Description: " + description + " | Price: " + price + " | Dosage: " + dosage);
+                } while (resultSet.next());
+            } else {
+                System.out.println("No drug found with the given code or name.");
             }
         }
     }
 
-    private void viewPurchaseHistory(Scanner scanner) {
-        System.out.println("\nEnter drug code to view purchase history:");
-        String code = scanner.nextLine();
-        Drug drug = getDrug(code);
-        if (drug != null && !drug.getPurchaseHistory().isEmpty()) {
-            System.out.println("Purchase History for " + drug.getName() + ":");
-            for (Purchase purchase : drug.getPurchaseHistory()) {
-                System.out.println(" - Customer ID: " + purchase.getCustomerId() + ", Date: " + purchase.getDate() + ", Quantity: " + purchase.getQuantity());
+    private static void viewAllDrugsAndSuppliers(Connection connection) throws SQLException {
+        String query = "SELECT d.code, d.name, s.supplier_name, s.location FROM drugs d JOIN suppliers s ON d.supplier_id = s.id ORDER BY d.name";
+        try (Statement statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(query);
+
+            System.out.println("Drugs and their suppliers:");
+            while (resultSet.next()) {
+                String code = resultSet.getString("code");
+                String name = resultSet.getString("name");
+                String supplierName = resultSet.getString("supplier_name");
+                String location = resultSet.getString("location");
+
+                System.out.println("Code: " + code + " | Name: " + name + " | Supplier: " + supplierName + " | Location: " + location);
             }
-        } else {
-            System.out.println("No purchase history for this drug.");
         }
     }
 
-    public static void main(String[] args) {
-        PharmacyManagementSystem pms = new PharmacyManagementSystem();
-
-        // Pre-populate some data (optional)
-        Drug paracetamol = new Drug("D001", "Paracetamol", "Pain reliever", 1.5);
-        pms.addDrug(paracetamol);
-
-        Supplier supplier1 = new Supplier("S001", "Supplier One", "New York");
-        Supplier supplier2 = new Supplier("S002", "Supplier Two", "California");
-        pms.addSupplier(supplier1);
-        pms.addSupplier(supplier2);
-
-        paracetamol.addSupplier(supplier1);
-        paracetamol.addSupplier(supplier2);
-
-        Purchase purchase1 = new Purchase("C001", new Date(), 5);
-        pms.addPurchase("D001", purchase1);
-
-        // Run the command-line interface
-        pms.displayMenu();
+    private static void viewPurchaseHistory(Connection connection, Scanner scanner) throws SQLException {
+        System.out.println("\nEnter drug name or code to view purchase history:");
+        String input = scanner.nextLine();
+    
+        String query = "SELECT d.code, d.name, ph.purchase_date, ph.buyer, SUM(ph.quantity) AS total_quantity " +
+                       "FROM purchase_history ph " +
+                       "JOIN drugs d ON ph.drug_code = d.code " +
+                       "WHERE d.code = ? OR d.name = ? " +
+                       "GROUP BY d.code, d.name, ph.purchase_date, ph.buyer " +
+                       "ORDER BY ph.purchase_date";
+    
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setString(1, input);
+            preparedStatement.setString(2, input);
+            ResultSet resultSet = preparedStatement.executeQuery();
+    
+            if (!resultSet.next()) {
+                System.out.println("Error: No purchase history found for the specified drug name or code.");
+                return;
+            }
+    
+            // Output drug code, name and purchase history
+            String drugCode = resultSet.getString("code");
+            String drugName = resultSet.getString("name");
+            System.out.println("\nCumulative purchase history for: " + drugCode + " (" + drugName + ")");
+            do {
+                String purchaseDate = resultSet.getString("purchase_date");
+                String buyer = resultSet.getString("buyer");
+                int totalQuantity = resultSet.getInt("total_quantity");
+    
+                System.out.println("Date: " + purchaseDate + " | Buyer: " + buyer + " | Total Quantity Bought: " + totalQuantity);
+            } while (resultSet.next());
+        }
     }
+    
 }
