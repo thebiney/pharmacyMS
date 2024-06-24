@@ -59,7 +59,8 @@ public class PharmacyManagementSystem {
         } finally {
             // Close resources
             try {
-                if (connection != null) connection.close();
+                if (connection != null)
+                    connection.close();
             } catch (SQLException e) {
                 System.err.println("Error closing the database resources: " + e.getMessage());
             }
@@ -79,12 +80,12 @@ public class PharmacyManagementSystem {
         String description = scanner.nextLine();
         System.out.println("\nEnter drug price:");
         double price = scanner.nextDouble();
-        scanner.nextLine();  // Consume the newline
+        scanner.nextLine(); // Consume the newline
         System.out.println("\nEnter drug dosage:");
         String dosage = scanner.nextLine();
         System.out.println("\nEnter supplier ID:");
         int supplierId = scanner.nextInt();
-        scanner.nextLine();  // Consume the newline
+        scanner.nextLine(); // Consume the newline
 
         String insertSQL = "INSERT INTO drugs (code, name, description, price, dosage, supplier_id) VALUES (?, ?, ?, ?, ?, ?)";
         try (PreparedStatement preparedStatement = connection.prepareStatement(insertSQL)) {
@@ -117,7 +118,8 @@ public class PharmacyManagementSystem {
                     double price = resultSet.getDouble("price");
                     String dosage = resultSet.getString("dosage");
 
-                    System.out.println("Code: " + code + " | Name: " + name + " | Description: " + description + " | Price: " + price + " | Dosage: " + dosage);
+                    System.out.println("Code: " + code + " | Name: " + name + " | Description: " + description
+                            + " | Price: " + price + " | Dosage: " + dosage);
                 } while (resultSet.next());
             } else {
                 System.out.println("No drug found with the given code or name.");
@@ -137,7 +139,8 @@ public class PharmacyManagementSystem {
                 String supplierName = resultSet.getString("supplier_name");
                 String location = resultSet.getString("location");
 
-                System.out.println("Code: " + code + " | Name: " + name + " | Supplier: " + supplierName + " | Location: " + location);
+                System.out.println("Code: " + code + " | Name: " + name + " | Supplier: " + supplierName
+                        + " | Location: " + location);
             }
         }
     }
@@ -145,24 +148,24 @@ public class PharmacyManagementSystem {
     private static void viewPurchaseHistory(Connection connection, Scanner scanner) throws SQLException {
         System.out.println("\nEnter drug name or code to view purchase history:");
         String input = scanner.nextLine();
-    
+
         String query = "SELECT d.code, d.name, ph.purchase_date, ph.buyer, SUM(ph.quantity) AS total_quantity " +
-                       "FROM purchase_history ph " +
-                       "JOIN drugs d ON ph.drug_code = d.code " +
-                       "WHERE d.code = ? OR d.name = ? " +
-                       "GROUP BY d.code, d.name, ph.purchase_date, ph.buyer " +
-                       "ORDER BY ph.purchase_date";
-    
+                "FROM purchase_history ph " +
+                "JOIN drugs d ON ph.drug_code = d.code " +
+                "WHERE d.code = ? OR d.name = ? " +
+                "GROUP BY d.code, d.name, ph.purchase_date, ph.buyer " +
+                "ORDER BY ph.purchase_date";
+
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             preparedStatement.setString(1, input);
             preparedStatement.setString(2, input);
             ResultSet resultSet = preparedStatement.executeQuery();
-    
+
             if (!resultSet.next()) {
                 System.out.println("Error: No purchase history found for the specified drug name or code.");
                 return;
             }
-    
+
             // Output drug code, name and purchase history
             String drugCode = resultSet.getString("code");
             String drugName = resultSet.getString("name");
@@ -171,10 +174,11 @@ public class PharmacyManagementSystem {
                 String purchaseDate = resultSet.getString("purchase_date");
                 String buyer = resultSet.getString("buyer");
                 int totalQuantity = resultSet.getInt("total_quantity");
-    
-                System.out.println("Date: " + purchaseDate + " | Buyer: " + buyer + " | Total Quantity Bought: " + totalQuantity);
+
+                System.out.println(
+                        "Date: " + purchaseDate + " | Buyer: " + buyer + " | Total Quantity Bought: " + totalQuantity);
             } while (resultSet.next());
         }
     }
-    
+
 }
