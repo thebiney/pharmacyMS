@@ -61,6 +61,4 @@ The Pharmacy Management System uses the following database schema:
 
 If you find any issues or have suggestions for improvements, feel free to create a new issue or submit a pull request.
 
-## License
 
-This project is licensed under the [MIT License](LICENSE).
